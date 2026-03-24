@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qüestionari de Botigues - Nivell A2</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f8ff;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #0056b3;
+        }
+        .intro {
+            text-align: center;
+            font-size: 1.1em;
+            margin-bottom: 30px;
+        }
+        #quiz-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .question-block {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px dashed #eee;
+        }
+        .question-text {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #222;
+        }
+        .option-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 12px;
+            margin: 8px 0;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .option-btn:hover {
+            background-color: #e9ecef;
+        }
+        
+        /* Modal d'animació */
+        #feedback-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+        }
+        .modal-text {
+            font-family: 'Arial Black', sans-serif;
+            font-weight: bold;
+            animation: popIn 0.3s ease-out;
+            padding: 20px;
+        }
+        .success-msg {
+            font-size: 7rem; /* Mans molt grans */
+        }
+        .error-msg {
+            font-size: 4rem;
+            color: #ff4c4c; /* Vermell per l'error */
+        }
+        
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🛒 Anem de compres!</h1>
+    <p class="intro">Tria la botiga correcta on pots comprar els següents productes. Molta sort!</p>
+
+    <div id="quiz-container"></div>
+
+    <div id="feedback-modal" onclick="closeModal()">
+        <div id="modal-content" class="modal-text"></div>
+    </div>
+
+    <script>
+        // Dades de les 50 preguntes (q = pregunta, o = opcions, a = índex de la resposta correcta 0-3)
+        const questions = [
+            {q: "1. Necessito comprar una barra de pa per fer entrepans. On vaig?", o: ["a) A la carnisseria", "b) Al forn de pa", "c) A la peixateria", "d) A la sabateria"], a: 1},
+            {q: "2. Vull fer un pollastre al forn i necessito comprar la carn. A quina botiga vaig?", o: ["a) A la carnisseria", "b) A la drogueria", "c) A la joieria", "d) A la papereria"], a: 0},
+            {q: "3. Avui soparem llobarro i salmó. On es compra el peix?", o: ["a) A la fruiteria", "b) A la llibreria", "c) A la peixateria", "d) A l'estanc"], a: 2},
+            {q: "4. A quina botiga podem comprar plàtans, taronges i pomes?", o: ["a) A la peixateria", "b) A la fruiteria", "c) A la farmàcia", "d) A la ferreteria"], a: 1},
+            {q: "5. És l'aniversari de la meva mare i vull comprar un pastís de xocolata. On vaig?", o: ["a) A la pastisseria", "b) A la botiga de roba", "c) A la llibreria", "d) A l'òptica"], a: 0},
+            {q: "6. Si vull comprar pernil salat i formatge, a quina parada del mercat haig d'anar?", o: ["a) A la peixateria", "b) A la xarcuteria", "c) A la drogueria", "d) Al forn de pa"], a: 1},
+            {q: "7. On comprem els tomàquets, les cebes i els enciams per fer una amanida?", o: ["a) A la verduleria", "b) A la ferreteria", "c) A la joieria", "d) A la farmàcia"], a: 0},
+            {q: "8. Què més podem comprar a la peixateria a part de peix?", o: ["a) Llibretes i bolígrafs", "b) Marisc, com gambes i musclos", "c) Sabates i botes", "d) Pa i galetes"], a: 1},
+            {q: "9. Diumenge no vull cuinar. On puc comprar un pollastre a l'ast ja fet?", o: ["a) A la rostisseria", "b) A la floristeria", "c) A la botiga d'esports", "d) A l'òptica"], a: 0},
+            {q: "10. A quina botiga podem comprar uns croissants per esmorzar?", o: ["a) A la farmàcia", "b) A la peixateria", "c) Al forn de pa o pastisseria", "d) A la ferreteria"], a: 2},
+            {q: "11. Em fa molt de mal el cap i necessito una aspirina. On hi ha medicaments?", o: ["a) Al supermercat", "b) A la farmàcia", "c) A la perfumeria", "d) Al quiosc"], a: 1},
+            {q: "12. Vull fer un regal i he pensat en una colònia. On la venen?", o: ["a) A la papereria", "b) A la llibreria", "c) A la perfumeria", "d) A la carnisseria"], a: 2},
+            {q: "13. On trobem carros grans per poder comprar molts productes diferents alhora?", o: ["a) Al supermercat", "b) A la farmàcia", "c) A l'estanc", "d) A la joieria"], a: 0},
+            {q: "14. A la farmàcia, a més de pastilles, també puc comprar...", o: ["a) Un diari", "b) Xarop per a la tos", "c) Un paquet de folis", "d) Una barra de pa"], a: 1},
+            {q: "15. Vull comprar gel de bany, xampú per als cabells i desodorant. On ho trobo?", o: ["a) A la carnisseria", "b) Al supermercat o perfumeria", "c) A la llibreria", "d) A la floristeria"], a: 1},
+            {q: "16. On puc comprar una ampolla de lleixiu per fregar el terra?", o: ["a) A la botiga de roba", "b) A la drogueria o supermercat", "c) A la sabateria", "d) Al quiosc"], a: 1},
+            {q: "17. Què podem comprar a la drogueria?", o: ["a) Sabó de rentar la roba", "b) Carn de vedella", "c) Un pastís de maduixa", "d) Unes ulleres"], a: 0},
+            {q: "18. Tinc una recepta del metge per curar-me el refredat. On he d'anar?", o: ["a) Al supermercat", "b) A la farmàcia", "c) A l'estanc", "d) A la perfumeria"], a: 1},
+            {q: "19. Vull comprar una capsa de galetes, un bric de llet i ous. On és més fàcil trobar-ho tot?", o: ["a) Al supermercat", "b) A la llibreria", "c) A la botiga de mobles", "d) A la ferreteria"], a: 0},
+            {q: "20. Quin d'aquests productes NO puc comprar a la perfumeria?", o: ["a) Maquillatge", "b) Pintallavis", "c) Una ampolla de llet", "d) Crema per a la cara"], a: 2},
+            {q: "21. Tinc una festa i vull comprar-me uns pantalons nous. On vaig?", o: ["a) A la botiga de roba", "b) A la botiga d'esports", "c) A l'estanc", "d) A la papereria"], a: 0},
+            {q: "22. Què es ven a la sabateria?", o: ["a) Sabates, botes i vambes", "b) Samarretes i jerseis", "c) Ulleres i lents de contacte", "d) Llibres i revistes"], a: 0},
+            {q: "23. Fa molta calor. Vull comprar una samarreta de màniga curta. On vaig?", o: ["a) A la botiga de roba", "b) A la ferreteria", "c) A la peixateria", "d) A la farmàcia"], a: 0},
+            {q: "24. A la sabateria també hi puc comprar...", o: ["a) Un abric", "b) Unes sandàlies per a l'estiu", "c) Uns guants de llana", "d) Una gorra"], a: 1},
+            {q: "25. A l'hivern fa molt de fred. Necessito una jaqueta gruixuda. On la compro?", o: ["a) A la botiga de roba", "b) A la floristeria", "c) A l'òptica", "d) A la pastisseria"], a: 0},
+            {q: "26. Què podem trobar en una botiga d'esports?", o: ["a) Xandalls, pilotes i raquetes", "b) Vestits elegants de casament", "c) Ordinadors i teclats", "d) Medicaments"], a: 0},
+            {q: "27. Si necessito roba interior, a quina botiga vaig?", o: ["a) A la peixateria", "b) A la merceria o botiga de roba", "c) A l'estanc", "d) Al quiosc"], a: 1},
+            {q: "28. Què podem comprar a la joieria?", o: ["a) Un telèfon mòbil", "b) Un rellotge, un collaret o un anell", "c) Uns pantalons curts", "d) Un pastís"], a: 1},
+            {q: "29. Tinc fred als peus. On compro uns mitjons de llana?", o: ["a) A la merceria o botiga de roba", "b) A la botiga de mobles", "c) A la peixateria", "d) A l'òptica"], a: 0},
+            {q: "30. Quin d'aquests articles NO venen a la joieria?", o: ["a) Un anell d'or", "b) Unes arracades", "c) Uns pantalons texans", "d) Una polsera de plata"], a: 2},
+            {q: "31. M'agrada molt llegir novel·les. On puc comprar un llibre nou?", o: ["a) A la llibreria", "b) A la papereria", "c) Al forn de pa", "d) A la drogueria"], a: 0},
+            {q: "32. Necessito bolígrafs, llapis i llibretes per anar a classe. On vaig?", o: ["a) A la papereria", "b) A la llibreria", "c) A la carnisseria", "d) Al quiosc"], a: 0},
+            {q: "33. Vull penjar un quadre i necessito claus i un martell. A quina botiga ho venen?", o: ["a) A la ferreteria", "b) A la botiga de roba", "c) A la sabateria", "d) A la perfumeria"], a: 0},
+            {q: "34. Avui és Sant Jordi i vull comprar un ram de roses. On el vencen?", o: ["a) A la ferreteria", "b) A la floristeria", "c) A l'estanc", "d) A l'òptica"], a: 1},
+            {q: "35. Què pots comprar a l'estanc?", o: ["a) Segells per enviar cartes i tabac", "b) Fruita i verdura", "c) Llibres de text", "d) Peix fresc"], a: 0},
+            {q: "36. S'ha fos la llum de l'habitació. On compro una bombeta nova?", o: ["a) A la floristeria", "b) A la pastisseria", "c) A la ferreteria", "d) A la sabateria"], a: 2},
+            {q: "37. A la llibreria, a més de novel·les, també podem trobar...", o: ["a) Diccionaris i guies de viatge", "b) Pomes i peres", "c) Sabates esportives", "d) Medicaments"], a: 0},
+            {q: "38. Vull regalar una planta bonica per decorar el menjador. On vaig?", o: ["a) A la floristeria", "b) A la peixateria", "c) A la drogueria", "d) A l'estanc"], a: 0},
+            {q: "39. Necessito unes tisores, una goma d'esborrar i cinta adhesiva. Ho trobo a...", o: ["a) La papereria", "b) La carnisseria", "c) La joieria", "d) El forn de pa"], a: 0},
+            {q: "40. Què podem comprar a la botiga de mobles?", o: ["a) Un sofà, un llit i un armari", "b) Un llibre i una revista", "c) Una barra de pa", "d) Un perfum"], a: 0},
+            {q: "41. No veig bé les lletres de lluny. On vaig a comprar unes ulleres per llegir?", o: ["a) A la farmàcia", "b) A l'òptica", "c) A la llibreria", "d) A la drogueria"], a: 1},
+            {q: "42. A l'òptica també podem comprar...", o: ["a) Ulleres de sol", "b) Rellotges de paret", "c) Pastilles pel mal de cap", "d) Llibretes"], a: 0},
+            {q: "43. On puc comprar el diari del dia o una revista?", o: ["a) Al quiosc", "b) A l'estanc", "c) A la joieria", "d) A la ferreteria"], a: 0},
+            {q: "44. Se m'ha espatllat la rentadora. A quina botiga en compro una de nova?", o: ["a) A la botiga de joguines", "b) A la botiga d'electrodomèstics", "c) A la ferreteria", "d) A la drogueria"], a: 1},
+            {q: "45. Vull jugar a un joc de taula amb els meus amics. On el compro?", o: ["a) A la botiga de joguines", "b) A la botiga de roba", "c) A l'òptica", "d) A la pastisseria"], a: 0},
+            {q: "46. Necessito un ratolí nou perquè no em funciona. Què venen a la botiga d'informàtica?", o: ["a) Ordinadors, pantalles i teclats", "b) Televisors i neveres", "c) Llibres i revistes", "d) Ulleres i lents"], a: 0},
+            {q: "47. El meu nebot vol un cotxe teledirigit. Vaig a...", o: ["a) La botiga de joguines", "b) La botiga de roba", "c) La papereria", "d) La sabateria"], a: 0},
+            {q: "48. Quina d'aquestes coses NO es pot comprar al mercat municipal?", o: ["a) Un quilo de pomes", "b) Mig quilo de carn picada", "c) Un cotxe de veritat", "d) Un tall de formatge"], a: 2},
+            {q: "49. Necessito una targeta de transport per viatjar. On la puc comprar?", o: ["a) A la farmàcia", "b) A l'estació de metro o a l'estanc", "c) A la peixateria", "d) A la floristeria"], a: 1},
+            {q: "50. Tinc molta gana però no vull cuinar. On compro canalons ja fets?", o: ["a) A la rostisseria", "b) A la botiga de mobles", "c) A la sabateria", "d) A l'òptica"], a: 0}
+        ];
+
+        const container = document.getElementById('quiz-container');
+        const modal = document.getElementById('feedback-modal');
+        const modalContent = document.getElementById('modal-content');
+
+        // Generar les preguntes
+        questions.forEach((qObj, index) => {
+            let questionDiv = document.createElement('div');
+            questionDiv.className = 'question-block';
+            
+            let questionTitle = document.createElement('div');
+            questionTitle.className = 'question-text';
+            questionTitle.textContent = qObj.q;
+            questionDiv.appendChild(questionTitle);
+
+            qObj.o.forEach((optText, optIndex) => {
+                let btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = optText;
+                // En clicar, comprovem si és la correcta
+                btn.onclick = () => checkAnswer(optIndex, qObj.a);
+                questionDiv.appendChild(btn);
+            });
+
+            container.appendChild(questionDiv);
+        });
+
+        // Funció per validar la resposta
+        function checkAnswer(selectedIndex, correctIndex) {
+            modal.style.display = 'flex'; // Mostrar pantalla
+            
+            if (selectedIndex === correctIndex) {
+                // Correcte
+                modalContent.className = 'modal-text success-msg';
+                modalContent.innerHTML = '👏👏👏';
+            } else {
+                // Incorrecte
+                modalContent.className = 'modal-text error-msg';
+                modalContent.innerHTML = 'TORNA-HO A PROVAR!<br>ÀNIMS!';
+            }
+
+            // Amagar el missatge automàticament al cap d'1.5 segons
+            setTimeout(() => {
+                closeModal();
+            }, 1500);
+        }
+
+        // Funció per tancar el missatge (també si l'usuari clica)
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
